@@ -1,0 +1,1 @@
+{"id": "infographic-generator-app-b8t2", "lang": "typescript"}
