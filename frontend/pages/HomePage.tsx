@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { ArrowRight, BarChart3, Palette, Zap, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function HomePage() {
+  const { isSignedIn } = useAuth();
+
   const features = [
     {
       icon: BarChart3,
@@ -42,13 +45,13 @@ export default function HomePage() {
               with our AI-powered design platform. No design experience required.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/generate">
+              <Link to={isSignedIn ? "/dashboard" : "/sign-in"}>
                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
                   Start Creating
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link to="/templates">
+              <Link to={isSignedIn ? "/templates" : "/sign-up"}>
                 <Button size="lg" variant="outline" className="text-lg px-8 py-3">
                   Browse Templates
                 </Button>
@@ -104,7 +107,7 @@ export default function HomePage() {
             Join thousands of creators who are already using AIgraphy to 
             bring their ideas to life.
           </p>
-          <Link to="/generate">
+          <Link to={isSignedIn ? "/dashboard" : "/sign-up"}>
             <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
               Get Started for Free
               <ArrowRight className="ml-2 h-5 w-5" />

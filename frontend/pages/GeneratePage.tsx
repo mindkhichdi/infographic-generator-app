@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Zap, Download, Settings, FileText, Palette, Monitor } from 'lucide-react';
-import backend from '~backend/client';
+import { Zap, Download, Settings, FileText, Palette, Monitor, ExternalLink, Upload } from 'lucide-react';
+import { useBackend } from '../hooks/useBackend';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,11 +17,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
+import InfographicRenderer from '../components/InfographicRenderer';
 
 export default function GeneratePage() {
   const { toast } = useToast();
+  const backend = useBackend();
   const [content, setContent] = useState('');
+  const [urlInput, setUrlInput] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState('modern-stats');
   const [selectedBrand, setSelectedBrand] = useState<string>('');
   const [format, setFormat] = useState<'png' | 'jpg' | 'pdf' | 'svg'>('png');
@@ -88,6 +90,47 @@ export default function GeneratePage() {
     });
   };
 
+  const handleUrlExtract = async () => {
+    if (!urlInput.trim()) {
+      toast({
+        title: 'URL required',
+        description: 'Please enter a URL to extract content.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      // Mock URL content extraction
+      const mockContent = `
+# ${urlInput.includes('blog') ? 'Blog Post' : 'Article'} Content
+
+This is extracted content from the provided URL. In a real implementation, this would fetch and parse the actual content from the webpage.
+
+Key points:
+• 85% increase in user engagement
+• 1.2K new users this month
+• 45% improvement in conversion rates
+• 3x faster loading times
+
+The data shows significant growth across all metrics, indicating successful implementation of our new strategy.
+      `;
+      
+      setContent(mockContent);
+      setUrlInput('');
+      toast({
+        title: 'Content extracted',
+        description: 'Content has been successfully extracted from the URL.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Extraction failed',
+        description: 'Failed to extract content from the URL. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const templates = templatesData?.templates || [];
   const brands = brandsData?.brands || [];
 
@@ -137,18 +180,33 @@ export default function GeneratePage() {
                   id="content"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="Enter your blog post, notes, or any text content here. You can also paste a URL to extract content automatically..."
+                  placeholder="Enter your blog post, notes, or any text content here..."
                   rows={8}
                   className="mt-2"
                 />
               </div>
+              
+              <div className="border-t pt-4">
+                <Label htmlFor="url">Extract from URL</Label>
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    id="url"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder="https://example.com/blog-post"
+                    className="flex-1"
+                  />
+                  <Button onClick={handleUrlExtract} variant="outline">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Extract
+                  </Button>
+                </div>
+              </div>
+              
               <div className="flex gap-4">
                 <Button variant="outline" className="flex-1">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Attach Files
-                </Button>
-                <Button variant="outline" className="flex-1">
-                  Extract from URL
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload File
                 </Button>
               </div>
             </CardContent>
@@ -363,9 +421,7 @@ export default function GeneratePage() {
 
               {generatedResult && (
                 <div className="space-y-4">
-                  <div className="aspect-[3/4] bg-gray-100 rounded-lg flex items-center justify-center">
-                    <p className="text-gray-500">Generated Preview</p>
-                  </div>
+                  <InfographicRenderer data={generatedResult.infographicData} />
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Format:</span>

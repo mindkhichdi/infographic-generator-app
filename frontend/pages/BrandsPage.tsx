@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit, Trash2, Palette, Type } from 'lucide-react';
-import backend from '~backend/client';
+import { useBackend } from '../hooks/useBackend';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
@@ -30,6 +30,7 @@ import BrandForm from '../components/BrandForm';
 export default function BrandsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const backend = useBackend();
   const [editingBrand, setEditingBrand] = useState<any>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);

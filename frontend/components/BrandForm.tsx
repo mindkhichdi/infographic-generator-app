@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Plus, X, Upload } from 'lucide-react';
-import backend from '~backend/client';
+import { useBackend } from '../hooks/useBackend';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,6 +32,7 @@ const defaultColors = [
 
 export default function BrandForm({ brand, onSuccess }: BrandFormProps) {
   const { toast } = useToast();
+  const backend = useBackend();
   const [name, setName] = useState(brand?.name || '');
   const [watermarkType, setWatermarkType] = useState<'text' | 'logo'>('text');
   const [watermarkText, setWatermarkText] = useState(brand?.watermarkText || '');

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Plus, Edit, Trash2, Calendar, FileText } from 'lucide-react';
-import backend from '~backend/client';
+import { useBackend } from '../hooks/useBackend';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
@@ -21,6 +21,7 @@ import {
 export default function ProjectsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const backend = useBackend();
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const { data: projectsData, isLoading, error } = useQuery({

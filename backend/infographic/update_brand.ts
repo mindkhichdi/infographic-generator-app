@@ -1,4 +1,5 @@
 import { api, APIError } from "encore.dev/api";
+import { getAuthData } from "~encore/auth";
 import { infographicDB } from "./db";
 import type { Brand } from "./create_brand";
 
@@ -15,10 +16,12 @@ export interface UpdateBrandRequest {
   bodyFont?: string;
 }
 
-// Updates an existing brand.
+// Updates an existing brand for the authenticated user.
 export const updateBrand = api<UpdateBrandParams & UpdateBrandRequest, Brand>(
-  { expose: true, method: "PUT", path: "/brands/:id" },
+  { expose: true, method: "PUT", path: "/brands/:id", auth: true },
   async (req) => {
+    const auth = getAuthData()!;
+    
     const updates: string[] = [];
     const values: any[] = [];
     let paramIndex = 1;
@@ -53,12 +56,13 @@ export const updateBrand = api<UpdateBrandParams & UpdateBrandRequest, Brand>(
     }
 
     updates.push(`updated_at = NOW()`);
+    values.push(auth.userID);
     values.push(req.id);
 
     const query = `
       UPDATE brands 
       SET ${updates.join(', ')}
-      WHERE id = $${paramIndex}
+      WHERE user_id = $${paramIndex++} AND id = $${paramIndex}
       RETURNING id, name, watermark_text as "watermarkText", watermark_logo_url as "watermarkLogoUrl", color_palette as "colorPalette", heading_font as "headingFont", body_font as "bodyFont", created_at as "createdAt", updated_at as "updatedAt"
     `;
 
