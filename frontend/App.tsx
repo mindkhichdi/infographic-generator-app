@@ -5,6 +5,8 @@ import HomePage from './pages/HomePage';
 import ProjectsPage from './pages/ProjectsPage';
 import EditorPage from './pages/EditorPage';
 import TemplatesPage from './pages/TemplatesPage';
+import BrandsPage from './pages/BrandsPage';
+import GeneratePage from './pages/GeneratePage';
 import Navbar from './components/Navbar';
 
 const queryClient = new QueryClient();
@@ -19,6 +21,8 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
+            <Route path="/brands" element={<BrandsPage />} />
+            <Route path="/generate" element={<GeneratePage />} />
             <Route path="/editor/:id?" element={<EditorPage />} />
           </Routes>
           <Toaster />

@@ -42,7 +42,7 @@ export default function HomePage() {
               with our AI-powered design platform. No design experience required.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/editor">
+              <Link to="/generate">
                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
                   Start Creating
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -101,10 +101,10 @@ export default function HomePage() {
             Ready to Create Your First Infographic?
           </h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of creators who are already using InfographyAI to 
+            Join thousands of creators who are already using AIgraphy to 
             bring their ideas to life.
           </p>
-          <Link to="/editor">
+          <Link to="/generate">
             <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
               Get Started for Free
               <ArrowRight className="ml-2 h-5 w-5" />

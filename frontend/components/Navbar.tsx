@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { BarChart3, FileText, Layout, Home } from 'lucide-react';
+import { BarChart3, FileText, Layout, Home, Palette, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Navbar() {
@@ -7,8 +7,10 @@ export default function Navbar() {
 
   const navItems = [
     { path: '/', label: 'Home', icon: Home },
+    { path: '/generate', label: 'Generate', icon: Zap },
     { path: '/projects', label: 'Projects', icon: FileText },
     { path: '/templates', label: 'Templates', icon: Layout },
+    { path: '/brands', label: 'Brands', icon: Palette },
   ];
 
   return (
@@ -17,7 +19,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center space-x-2">
             <BarChart3 className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">InfographyAI</span>
+            <span className="text-xl font-bold text-gray-900">AIgraphy</span>
           </Link>
 
           <div className="flex items-center space-x-4">
