@@ -33,8 +33,16 @@ export default function TemplateSelector({
           onClick={() => onTemplateSelect(template.id)}
         >
           <CardContent className="p-4">
-            <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg mb-3 flex items-center justify-center">
-              <span className="text-gray-500 text-sm">Preview</span>
+            <div className="aspect-video rounded-lg mb-3 overflow-hidden">
+              <img 
+                src={template.previewUrl} 
+                alt={template.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMDAgMTUwTDE3NSAxMjVIMjI1TDIwMCAxNTBaIiBmaWxsPSIjOUI5QjlCIi8+CjwvZz4KPC9zdmc+';
+                }}
+              />
             </div>
             <h3 className="font-medium text-gray-900 mb-1">{template.name}</h3>
             <Badge variant="secondary" className="text-xs">

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Zap, Download, Settings, FileText, Palette, Monitor, ExternalLink, Upload } from 'lucide-react';
+import { Zap, Download, Settings, FileText, Palette, Monitor, ExternalLink, Upload, Sparkles } from 'lucide-react';
 import { useBackend } from '../hooks/useBackend';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +24,7 @@ export default function GeneratePage() {
   const backend = useBackend();
   const [content, setContent] = useState('');
   const [urlInput, setUrlInput] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState('modern-stats');
+  const [selectedTemplate, setSelectedTemplate] = useState('bullet-points');
   const [selectedBrand, setSelectedBrand] = useState<string>('');
   const [format, setFormat] = useState<'png' | 'jpg' | 'pdf' | 'svg'>('png');
   const [size, setSize] = useState<'square' | 'vertical' | 'horizontal' | 'story' | 'custom'>('vertical');
@@ -101,19 +101,31 @@ export default function GeneratePage() {
     }
 
     try {
-      // Mock URL content extraction
+      // Mock URL content extraction with sample content
       const mockContent = `
-# ${urlInput.includes('blog') ? 'Blog Post' : 'Article'} Content
+# ${urlInput.includes('blog') ? 'Blog Post Analysis' : 'Article Insights'}
 
-This is extracted content from the provided URL. In a real implementation, this would fetch and parse the actual content from the webpage.
+This content was extracted from the provided URL and analyzed for key insights.
 
-Key points:
+Key Benefits:
 • 85% increase in user engagement
-• 1.2K new users this month
+• 1.2K new users this month  
 • 45% improvement in conversion rates
 • 3x faster loading times
+• Better user experience
+• Increased customer satisfaction
 
 The data shows significant growth across all metrics, indicating successful implementation of our new strategy.
+
+Steps to Success:
+1. Analyze current performance metrics
+2. Identify areas for improvement
+3. Implement strategic changes
+4. Monitor progress regularly
+5. Optimize based on results
+6. Scale successful initiatives
+
+Our research indicates that companies following this approach see an average improvement of 67% in their key performance indicators.
       `;
       
       setContent(mockContent);
@@ -129,6 +141,45 @@ The data shows significant growth across all metrics, indicating successful impl
         variant: 'destructive',
       });
     }
+  };
+
+  const handleSampleContent = () => {
+    const sampleContent = `
+# Digital Marketing Success Guide
+
+Transform your marketing strategy with these proven techniques.
+
+Key Benefits:
+• 150% increase in lead generation
+• 89% improvement in conversion rates
+• 3x higher customer engagement
+• 45% reduction in acquisition costs
+• Better brand recognition
+• Increased customer loyalty
+
+Essential Steps:
+1. Define your target audience clearly
+2. Create compelling content that resonates
+3. Optimize for search engines and social media
+4. Track and analyze performance metrics
+5. Adjust strategy based on data insights
+6. Scale successful campaigns
+
+Pro Tips:
+• Use data-driven decision making
+• Focus on customer experience
+• Leverage automation tools
+• Test different approaches
+• Stay updated with trends
+
+Statistics show that businesses using these strategies see an average ROI improvement of 200% within the first year.
+    `;
+    
+    setContent(sampleContent);
+    toast({
+      title: 'Sample content loaded',
+      description: 'You can now generate an infographic with this sample content.',
+    });
   };
 
   const templates = templatesData?.templates || [];
@@ -148,6 +199,23 @@ The data shows significant growth across all metrics, indicating successful impl
     { value: 'pdf', label: 'PDF', description: 'Print-ready format' },
     { value: 'svg', label: 'SVG', description: 'Vector format, scalable' },
   ];
+
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      'data': 'bg-blue-100 text-blue-800',
+      'process': 'bg-purple-100 text-purple-800',
+      'comparison': 'bg-green-100 text-green-800',
+      'list': 'bg-orange-100 text-orange-800',
+      'social': 'bg-pink-100 text-pink-800',
+      'tutorial': 'bg-indigo-100 text-indigo-800',
+      'analytics': 'bg-cyan-100 text-cyan-800',
+      'marketing': 'bg-emerald-100 text-emerald-800',
+      'research': 'bg-violet-100 text-violet-800',
+      'educational': 'bg-amber-100 text-amber-800',
+      'product': 'bg-rose-100 text-rose-800',
+    };
+    return colors[category] || 'bg-gray-100 text-gray-800';
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -170,7 +238,7 @@ The data shows significant growth across all metrics, indicating successful impl
                 Content Input
               </CardTitle>
               <CardDescription>
-                Enter your text content or paste a URL to generate an infographic.
+                Enter your text content, paste a URL, or try our sample content.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -180,7 +248,7 @@ The data shows significant growth across all metrics, indicating successful impl
                   id="content"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="Enter your blog post, notes, or any text content here..."
+                  placeholder="Enter your blog post, notes, or any text content here. Use bullet points (•) or numbered lists for best results..."
                   rows={8}
                   className="mt-2"
                 />
@@ -204,6 +272,10 @@ The data shows significant growth across all metrics, indicating successful impl
               </div>
               
               <div className="flex gap-4">
+                <Button onClick={handleSampleContent} variant="outline" className="flex-1">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Try Sample Content
+                </Button>
                 <Button variant="outline" className="flex-1">
                   <Upload className="h-4 w-4 mr-2" />
                   Upload File
@@ -224,7 +296,7 @@ The data shows significant growth across all metrics, indicating successful impl
                 <CardHeader>
                   <CardTitle>Choose Template</CardTitle>
                   <CardDescription>
-                    Select a template that best fits your content type.
+                    Select a template that best fits your content type. Bullet point content works great with list templates.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -240,11 +312,19 @@ The data shows significant growth across all metrics, indicating successful impl
                         onClick={() => setSelectedTemplate(template.id)}
                       >
                         <CardContent className="p-4">
-                          <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg mb-3 flex items-center justify-center">
-                            <span className="text-gray-500 text-sm">Preview</span>
+                          <div className="aspect-video rounded-lg mb-3 overflow-hidden">
+                            <img 
+                              src={template.previewUrl} 
+                              alt={template.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMDAgMTUwTDE3NSAxMjVIMjI1TDIwMCAxNTBaIiBmaWxsPSIjOUI5QjlCIi8+CjwvZz4KPC9zdmc+';
+                              }}
+                            />
                           </div>
                           <h3 className="font-medium text-gray-900 mb-1">{template.name}</h3>
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge className={`text-xs ${getCategoryColor(template.category)}`}>
                             {template.category}
                           </Badge>
                         </CardContent>
@@ -416,6 +496,7 @@ The data shows significant growth across all metrics, indicating successful impl
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
                   <p className="text-gray-600">Creating your infographic...</p>
+                  <p className="text-sm text-gray-500 mt-2">Analyzing content and applying design...</p>
                 </div>
               )}
 
@@ -454,19 +535,19 @@ The data shows significant growth across all metrics, indicating successful impl
             <CardContent className="space-y-3 text-sm text-gray-600">
               <div className="flex items-start space-x-2">
                 <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <p>Use clear, concise content for better results</p>
+                <p>Use bullet points (•) for automatic list formatting</p>
               </div>
               <div className="flex items-start space-x-2">
                 <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <p>Include data points and statistics when possible</p>
+                <p>Include numbers and percentages for data visualization</p>
               </div>
               <div className="flex items-start space-x-2">
                 <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <p>Choose templates that match your content type</p>
+                <p>Use numbered lists (1., 2., 3.) for step-by-step guides</p>
               </div>
               <div className="flex items-start space-x-2">
                 <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <p>Apply your brand for consistent styling</p>
+                <p>Choose templates that match your content structure</p>
               </div>
             </CardContent>
           </Card>

@@ -22,7 +22,7 @@ export interface GenerateInfographicResponse {
   infographicData: {
     title: string;
     sections: Array<{
-      type: 'header' | 'stats' | 'chart' | 'content' | 'footer';
+      type: 'header' | 'stats' | 'chart' | 'content' | 'footer' | 'bullets' | 'steps' | 'comparison' | 'features' | 'tips';
       content: any;
     }>;
     colors: string[];
@@ -92,32 +92,115 @@ export const generateInfographic = api<GenerateInfographicRequest, GenerateInfog
 function parseContent(content: string) {
   // Extract key information from content
   const lines = content.split('\n').filter(line => line.trim());
-  const title = lines[0] || 'Untitled';
+  const title = extractTitle(lines);
   
   // Extract numbers and statistics
   const numbers = content.match(/\d+(?:\.\d+)?%?/g) || [];
-  const statistics = numbers.slice(0, 4).map((num, index) => ({
+  const statistics = numbers.slice(0, 6).map((num, index) => ({
     value: num,
-    label: `Metric ${index + 1}`,
+    label: generateStatLabel(num, index),
   }));
 
-  // Extract key points
+  // Extract bullet points
+  const bulletPoints = extractBulletPoints(content);
+  
+  // Extract numbered steps
+  const steps = extractSteps(content);
+
+  // Extract key points (non-bullet)
   const keyPoints = lines
-    .filter(line => line.includes('•') || line.includes('-') || line.includes('*'))
-    .slice(0, 5)
-    .map(point => point.replace(/^[•\-*]\s*/, ''));
+    .filter(line => !line.match(/^[•\-*\d+\.]/))
+    .filter(line => line.length > 10 && line.length < 100)
+    .slice(0, 5);
 
   // Detect content themes
   const themes = detectThemes(content);
+
+  // Extract comparisons
+  const comparisons = extractComparisons(content);
 
   return {
     title,
     content: content,
     statistics,
+    bulletPoints,
+    steps,
     keyPoints,
     themes,
+    comparisons,
     wordCount: content.split(' ').length,
   };
+}
+
+function extractTitle(lines: string[]): string {
+  // Look for markdown headers first
+  const headerLine = lines.find(line => line.startsWith('#'));
+  if (headerLine) {
+    return headerLine.replace(/^#+\s*/, '');
+  }
+  
+  // Look for lines that might be titles (short, at the beginning)
+  const potentialTitle = lines.find(line => 
+    line.length > 5 && 
+    line.length < 80 && 
+    !line.includes('.') && 
+    !line.match(/^[•\-*\d+\.]/)
+  );
+  
+  return potentialTitle || 'Untitled Infographic';
+}
+
+function extractBulletPoints(content: string): string[] {
+  const lines = content.split('\n');
+  const bulletPoints = lines
+    .filter(line => line.match(/^[\s]*[•\-*]\s+/))
+    .map(line => line.replace(/^[\s]*[•\-*]\s+/, '').trim())
+    .filter(point => point.length > 0);
+  
+  return bulletPoints.slice(0, 8); // Limit to 8 bullet points
+}
+
+function extractSteps(content: string): string[] {
+  const lines = content.split('\n');
+  const steps = lines
+    .filter(line => line.match(/^\s*\d+[\.\)]\s+/))
+    .map(line => line.replace(/^\s*\d+[\.\)]\s+/, '').trim())
+    .filter(step => step.length > 0);
+  
+  return steps.slice(0, 6); // Limit to 6 steps
+}
+
+function extractComparisons(content: string): Array<{before: string, after: string}> {
+  const comparisons = [];
+  const lowerContent = content.toLowerCase();
+  
+  // Look for before/after patterns
+  if (lowerContent.includes('before') && lowerContent.includes('after')) {
+    comparisons.push({
+      before: 'Previous State',
+      after: 'Improved State'
+    });
+  }
+  
+  // Look for vs patterns
+  if (lowerContent.includes(' vs ') || lowerContent.includes(' versus ')) {
+    comparisons.push({
+      before: 'Option A',
+      after: 'Option B'
+    });
+  }
+  
+  return comparisons;
+}
+
+function generateStatLabel(num: string, index: number): string {
+  if (num.includes('%')) {
+    const labels = ['Growth Rate', 'Success Rate', 'Improvement', 'Efficiency', 'Satisfaction', 'Performance'];
+    return labels[index % labels.length];
+  }
+  
+  const labels = ['Users', 'Revenue', 'Projects', 'Customers', 'Sales', 'Conversions'];
+  return labels[index % labels.length];
 }
 
 function detectThemes(content: string): string[] {
@@ -136,6 +219,12 @@ function detectThemes(content: string): string[] {
   if (lowerContent.includes('comparison') || lowerContent.includes('vs') || lowerContent.includes('versus')) {
     themes.push('comparison');
   }
+  if (lowerContent.includes('feature') || lowerContent.includes('benefit') || lowerContent.includes('advantage')) {
+    themes.push('features');
+  }
+  if (lowerContent.includes('tip') || lowerContent.includes('advice') || lowerContent.includes('recommendation')) {
+    themes.push('tips');
+  }
   
   return themes;
 }
@@ -151,22 +240,121 @@ function generateInfographicStructure(parsedContent: any, template: any, brand: 
     type: 'header',
     content: {
       title: parsedContent.title,
-      subtitle: `${parsedContent.wordCount} words analyzed`,
+      subtitle: `${parsedContent.wordCount} words • Generated with AI`,
     },
   });
 
-  // Statistics section (if we have numbers)
-  if (parsedContent.statistics.length > 0) {
-    sections.push({
-      type: 'stats',
-      content: {
-        stats: parsedContent.statistics,
-        layout: parsedContent.statistics.length <= 2 ? 'horizontal' : 'grid',
-      },
-    });
+  // Template-specific content generation
+  switch (template.id) {
+    case 'bullet-points':
+      if (parsedContent.bulletPoints.length > 0) {
+        sections.push({
+          type: 'bullets',
+          content: {
+            points: parsedContent.bulletPoints,
+            style: 'modern',
+          },
+        });
+      }
+      break;
+
+    case 'infographic-steps':
+      if (parsedContent.steps.length > 0) {
+        sections.push({
+          type: 'steps',
+          content: {
+            steps: parsedContent.steps.map((step, index) => ({
+              number: index + 1,
+              title: step.split('.')[0] || `Step ${index + 1}`,
+              description: step,
+            })),
+          },
+        });
+      }
+      break;
+
+    case 'statistics-dashboard':
+    case 'data-visualization':
+      if (parsedContent.statistics.length > 0) {
+        sections.push({
+          type: 'stats',
+          content: {
+            stats: parsedContent.statistics,
+            layout: parsedContent.statistics.length <= 3 ? 'horizontal' : 'grid',
+          },
+        });
+      }
+      break;
+
+    case 'comparison-chart':
+    case 'before-after':
+      if (parsedContent.comparisons.length > 0) {
+        sections.push({
+          type: 'comparison',
+          content: {
+            comparisons: parsedContent.comparisons,
+            layout: 'side-by-side',
+          },
+        });
+      }
+      break;
+
+    case 'feature-highlights':
+      sections.push({
+        type: 'features',
+        content: {
+          features: parsedContent.keyPoints.slice(0, 4).map((point, index) => ({
+            title: `Feature ${index + 1}`,
+            description: point,
+            icon: getFeatureIcon(index),
+          })),
+        },
+      });
+      break;
+
+    case 'tips-tricks':
+      sections.push({
+        type: 'tips',
+        content: {
+          tips: parsedContent.keyPoints.slice(0, 5).map((tip, index) => ({
+            number: index + 1,
+            title: `Tip ${index + 1}`,
+            description: tip,
+          })),
+        },
+      });
+      break;
+
+    default:
+      // Default content structure
+      if (parsedContent.bulletPoints.length > 0) {
+        sections.push({
+          type: 'bullets',
+          content: {
+            points: parsedContent.bulletPoints,
+            style: 'simple',
+          },
+        });
+      } else if (parsedContent.statistics.length > 0) {
+        sections.push({
+          type: 'stats',
+          content: {
+            stats: parsedContent.statistics,
+            layout: 'grid',
+          },
+        });
+      } else {
+        sections.push({
+          type: 'content',
+          content: {
+            points: parsedContent.keyPoints,
+            layout: 'list',
+          },
+        });
+      }
   }
 
-  // Chart section (based on themes)
+  // Add chart section if themes suggest it
   if (parsedContent.themes.includes('growth')) {
     sections.push({
       type: 'chart',
@@ -181,19 +369,8 @@ function generateInfographicStructure(parsedContent: any, template: any, brand: 
       type: 'chart',
       content: {
         type: 'bar',
-        title: 'Comparison',
+        title: 'Comparison Analysis',
         data: generateMockChartData('comparison'),
-      },
-    });
-  }
-
-  // Content section (key points)
-  if (parsedContent.keyPoints.length > 0) {
-    sections.push({
-      type: 'content',
-      content: {
-        points: parsedContent.keyPoints,
-        layout: 'list',
       },
     });
   }
@@ -216,6 +393,11 @@ function generateInfographicStructure(parsedContent: any, template: any, brand: 
       body: brand?.bodyFont || 'Inter',
     },
   };
+}
+
+function getFeatureIcon(index: number): string {
+  const icons = ['⭐', '🚀', '💡', '🎯', '📈', '🔧'];
+  return icons[index % icons.length];
 }
 
 function generateMockChartData(type: string) {
