@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Zap, Download, Settings, FileText, Palette, Monitor, ExternalLink, Upload, Sparkles } from 'lucide-react';
+import { Zap, Download, Settings, FileText, Palette, Monitor, ExternalLink, Upload, Sparkles, Play, Film } from 'lucide-react';
 import { useBackend } from '../hooks/useBackend';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import InfographicRenderer from '../components/InfographicRenderer';
+import AnimationScriptRenderer from '../components/AnimationScriptRenderer';
 
 export default function GeneratePage() {
   const { toast } = useToast();
@@ -33,6 +35,15 @@ export default function GeneratePage() {
   const [customHeight, setCustomHeight] = useState(1920);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedResult, setGeneratedResult] = useState<any>(null);
+  const [generationType, setGenerationType] = useState<'static' | 'animated'>('static');
+
+  // Animation script specific states
+  const [targetAudience, setTargetAudience] = useState('general');
+  const [designStyle, setDesignStyle] = useState('minimalist');
+  const [animationPacing, setAnimationPacing] = useState<'fast' | 'moderate' | 'slow'>('moderate');
+  const [sceneCount, setSceneCount] = useState([5]);
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
+  const [generatedScript, setGeneratedScript] = useState<any>(null);
 
   const { data: templatesData } = useQuery({
     queryKey: ['templates'],
@@ -65,6 +76,27 @@ export default function GeneratePage() {
     },
   });
 
+  const generateScriptMutation = useMutation({
+    mutationFn: (data: any) => backend.infographic.generateAnimationScript(data),
+    onSuccess: (result) => {
+      setGeneratedScript(result);
+      setIsGeneratingScript(false);
+      toast({
+        title: 'Animation script generated!',
+        description: 'Your Lottie animation script has been successfully created.',
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to generate animation script:', error);
+      setIsGeneratingScript(false);
+      toast({
+        title: 'Script generation failed',
+        description: 'Failed to generate the animation script. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleGenerate = () => {
     if (!content.trim()) {
       toast({
@@ -75,19 +107,36 @@ export default function GeneratePage() {
       return;
     }
 
-    setIsGenerating(true);
-    setGeneratedResult(null);
+    if (generationType === 'static') {
+      setIsGenerating(true);
+      setGeneratedResult(null);
 
-    generateMutation.mutate({
-      content,
-      templateId: selectedTemplate,
-      brandId: selectedBrand ? parseInt(selectedBrand) : undefined,
-      format,
-      size,
-      customWidth: size === 'custom' ? customWidth : undefined,
-      customHeight: size === 'custom' ? customHeight : undefined,
-      quality,
-    });
+      generateMutation.mutate({
+        content,
+        templateId: selectedTemplate,
+        brandId: selectedBrand ? parseInt(selectedBrand) : undefined,
+        format,
+        size,
+        customWidth: size === 'custom' ? customWidth : undefined,
+        customHeight: size === 'custom' ? customHeight : undefined,
+        quality,
+      });
+    } else {
+      setIsGeneratingScript(true);
+      setGeneratedScript(null);
+
+      const selectedBrandData = brands.find(b => b.id.toString() === selectedBrand);
+      
+      generateScriptMutation.mutate({
+        content,
+        targetAudience,
+        designStyle,
+        colorPalette: selectedBrandData?.colorPalette || ['#3B82F6', '#10B981', '#F59E0B'],
+        typography: selectedBrandData?.headingFont || 'Inter',
+        pacing: animationPacing,
+        sceneCount: sceneCount[0],
+      });
+    }
   };
 
   const handleUrlExtract = async () => {
@@ -101,7 +150,6 @@ export default function GeneratePage() {
     }
 
     try {
-      // Mock URL content extraction with sample content
       const mockContent = `
 # ${urlInput.includes('blog') ? 'Blog Post Analysis' : 'Article Insights'}
 
@@ -200,6 +248,21 @@ Statistics show that businesses using these strategies see an average ROI improv
     { value: 'svg', label: 'SVG', description: 'Vector format, scalable' },
   ];
 
+  const audienceOptions = [
+    { value: 'general', label: 'General Public', description: 'No prior knowledge assumed' },
+    { value: 'professional', label: 'Industry Professionals', description: 'Business and technical audience' },
+    { value: 'students', label: 'Students & Educators', description: 'Educational context' },
+    { value: 'executives', label: 'Executives & Investors', description: 'High-level decision makers' },
+  ];
+
+  const styleOptions = [
+    { value: 'minimalist', label: 'Minimalist & Clean', description: 'Simple, focused design' },
+    { value: 'corporate', label: 'Corporate & Professional', description: 'Business-oriented style' },
+    { value: 'playful', label: 'Playful & Colorful', description: 'Engaging and fun' },
+    { value: 'futuristic', label: 'Futuristic & Tech', description: 'Modern, tech-oriented' },
+    { value: 'organic', label: 'Hand-drawn & Organic', description: 'Natural, artistic feel' },
+  ];
+
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
       'data': 'bg-blue-100 text-blue-800',
@@ -284,10 +347,52 @@ Statistics show that businesses using these strategies see an average ROI improv
             </CardContent>
           </Card>
 
-          <Tabs defaultValue="template" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="template">Template</TabsTrigger>
-              <TabsTrigger value="format">Format</TabsTrigger>
+          <Card>
+            <CardHeader>
+              <CardTitle>Generation Type</CardTitle>
+              <CardDescription>
+                Choose between static infographic or animated script generation.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <Card
+                  className={`cursor-pointer transition-all hover:shadow-md ${
+                    generationType === 'static' 
+                      ? 'ring-2 ring-blue-500 bg-blue-50' 
+                      : 'hover:bg-gray-50'
+                  }`}
+                  onClick={() => setGenerationType('static')}
+                >
+                  <CardContent className="p-4 text-center">
+                    <FileText className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                    <h3 className="font-medium">Static Infographic</h3>
+                    <p className="text-sm text-gray-600 mt-1">Generate a static visual infographic</p>
+                  </CardContent>
+                </Card>
+                <Card
+                  className={`cursor-pointer transition-all hover:shadow-md ${
+                    generationType === 'animated' 
+                      ? 'ring-2 ring-blue-500 bg-blue-50' 
+                      : 'hover:bg-gray-50'
+                  }`}
+                  onClick={() => setGenerationType('animated')}
+                >
+                  <CardContent className="p-4 text-center">
+                    <Film className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+                    <h3 className="font-medium">Animation Script</h3>
+                    <p className="text-sm text-gray-600 mt-1">Generate Lottie animation script</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Tabs defaultValue={generationType === 'static' ? 'template' : 'animation'} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="template" disabled={generationType === 'animated'}>Template</TabsTrigger>
+              <TabsTrigger value="format" disabled={generationType === 'animated'}>Format</TabsTrigger>
+              <TabsTrigger value="animation" disabled={generationType === 'static'}>Animation</TabsTrigger>
               <TabsTrigger value="brand">Brand</TabsTrigger>
             </TabsList>
             
@@ -438,6 +543,95 @@ Statistics show that businesses using these strategies see an average ROI improv
               </Card>
             </TabsContent>
 
+            <TabsContent value="animation" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Play className="h-5 w-5 mr-2" />
+                    Animation Settings
+                  </CardTitle>
+                  <CardDescription>
+                    Configure the animation style and pacing for your Lottie script.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div>
+                    <Label className="text-base font-medium">Target Audience</Label>
+                    <div className="grid grid-cols-1 gap-3 mt-3">
+                      {audienceOptions.map((option) => (
+                        <Card
+                          key={option.value}
+                          className={`cursor-pointer transition-all hover:shadow-sm ${
+                            targetAudience === option.value 
+                              ? 'ring-2 ring-blue-500 bg-blue-50' 
+                              : 'hover:bg-gray-50'
+                          }`}
+                          onClick={() => setTargetAudience(option.value)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="font-medium">{option.label}</div>
+                            <div className="text-sm text-gray-600">{option.description}</div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-base font-medium">Design Style</Label>
+                    <div className="grid grid-cols-1 gap-3 mt-3">
+                      {styleOptions.map((option) => (
+                        <Card
+                          key={option.value}
+                          className={`cursor-pointer transition-all hover:shadow-sm ${
+                            designStyle === option.value 
+                              ? 'ring-2 ring-blue-500 bg-blue-50' 
+                              : 'hover:bg-gray-50'
+                          }`}
+                          onClick={() => setDesignStyle(option.value)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="font-medium">{option.label}</div>
+                            <div className="text-sm text-gray-600">{option.description}</div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-base font-medium">Animation Pacing</Label>
+                    <Select value={animationPacing} onValueChange={(value: any) => setAnimationPacing(value)}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fast">Fast & Energetic</SelectItem>
+                        <SelectItem value="moderate">Moderate & Balanced</SelectItem>
+                        <SelectItem value="slow">Slow & Deliberate</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-base font-medium">Number of Scenes: {sceneCount[0]}</Label>
+                    <Slider
+                      value={sceneCount}
+                      onValueChange={setSceneCount}
+                      max={8}
+                      min={3}
+                      step={1}
+                      className="mt-3"
+                    />
+                    <div className="flex justify-between text-sm text-gray-500 mt-1">
+                      <span>3 scenes</span>
+                      <span>8 scenes</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             <TabsContent value="brand" className="space-y-4">
               <Card>
                 <CardHeader>
@@ -478,29 +672,42 @@ Statistics show that businesses using these strategies see an average ROI improv
             <CardHeader>
               <CardTitle>Generate</CardTitle>
               <CardDescription>
-                Ready to create your infographic?
+                Ready to create your {generationType === 'static' ? 'infographic' : 'animation script'}?
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Button 
                 onClick={handleGenerate}
-                disabled={isGenerating || !content.trim()}
+                disabled={(generationType === 'static' ? isGenerating : isGeneratingScript) || !content.trim()}
                 className="w-full bg-blue-600 hover:bg-blue-700"
                 size="lg"
               >
-                <Zap className="h-4 w-4 mr-2" />
-                {isGenerating ? 'Generating...' : 'Generate Infographic'}
+                {generationType === 'static' ? (
+                  <>
+                    <Zap className="h-4 w-4 mr-2" />
+                    {isGenerating ? 'Generating...' : 'Generate Infographic'}
+                  </>
+                ) : (
+                  <>
+                    <Film className="h-4 w-4 mr-2" />
+                    {isGeneratingScript ? 'Generating...' : 'Generate Animation Script'}
+                  </>
+                )}
               </Button>
 
-              {isGenerating && (
+              {(isGenerating || isGeneratingScript) && (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Creating your infographic...</p>
-                  <p className="text-sm text-gray-500 mt-2">Analyzing content and applying design...</p>
+                  <p className="text-gray-600">
+                    {generationType === 'static' ? 'Creating your infographic...' : 'Generating animation script...'}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {generationType === 'static' ? 'Analyzing content and applying design...' : 'Analyzing content and creating scene-by-scene script...'}
+                  </p>
                 </div>
               )}
 
-              {generatedResult && (
+              {generatedResult && generationType === 'static' && (
                 <div className="space-y-4">
                   <InfographicRenderer data={generatedResult.infographicData} />
                   <div className="space-y-2">
@@ -525,6 +732,30 @@ Statistics show that businesses using these strategies see an average ROI improv
                   </Button>
                 </div>
               )}
+
+              {generatedScript && generationType === 'animated' && (
+                <div className="space-y-4">
+                  <AnimationScriptRenderer script={generatedScript} />
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Scenes:</span>
+                      <span className="font-medium">{generatedScript.scenes.length}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Total Duration:</span>
+                      <span className="font-medium">{generatedScript.totalDuration}s</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Style:</span>
+                      <span className="font-medium">{generatedScript.overallStyle}</span>
+                    </div>
+                  </div>
+                  <Button className="w-full" variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Script
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -533,22 +764,45 @@ Statistics show that businesses using these strategies see an average ROI improv
               <CardTitle>Quick Tips</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-gray-600">
-              <div className="flex items-start space-x-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <p>Use bullet points (•) for automatic list formatting</p>
-              </div>
-              <div className="flex items-start space-x-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <p>Include numbers and percentages for data visualization</p>
-              </div>
-              <div className="flex items-start space-x-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <p>Use numbered lists (1., 2., 3.) for step-by-step guides</p>
-              </div>
-              <div className="flex items-start space-x-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <p>Choose templates that match your content structure</p>
-              </div>
+              {generationType === 'static' ? (
+                <>
+                  <div className="flex items-start space-x-2">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Use bullet points (•) for automatic list formatting</p>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Include numbers and percentages for data visualization</p>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Use numbered lists (1., 2., 3.) for step-by-step guides</p>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Choose templates that match your content structure</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-start space-x-2">
+                    <div className="w-2 h-2 bg-purple-600 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Clear, structured content works best for animations</p>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <div className="w-2 h-2 bg-purple-600 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Include key statistics for dynamic number animations</p>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <div className="w-2 h-2 bg-purple-600 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Process steps create engaging sequential animations</p>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <div className="w-2 h-2 bg-purple-600 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Consider your audience when choosing animation style</p>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
